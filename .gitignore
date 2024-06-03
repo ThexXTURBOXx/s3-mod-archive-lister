@@ -36,3 +36,6 @@ build/
 
 ### Secrets ###
 config.properties
+
+### Others ###
+mcadl/
