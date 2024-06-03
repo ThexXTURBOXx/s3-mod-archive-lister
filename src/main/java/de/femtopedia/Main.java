@@ -1,9 +1,13 @@
 package de.femtopedia;
 
+import io.javalin.Javalin;
+import io.javalin.plugin.bundled.CorsPluginConfig;
 import java.io.FileInputStream;
 import java.net.URI;
-import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
+import java.util.Scanner;
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.pagination.sync.SdkIterable;
@@ -33,11 +37,22 @@ public class Main {
                 .region(region)
                 .build();
 
-        listFolder(s3, "", bucketName);
+        Javalin javalin = Javalin.create(config -> config.bundledPlugins.enableCors(
+                        container -> container.addRule(CorsPluginConfig.CorsRule::anyHost)))
+                .get("/{prefix}", ctx -> ctx.result(
+                        listFolder(s3, ctx.pathParam("prefix"), bucketName).toString()))
+                .start();
+
+        Scanner s = new Scanner(System.in);
+        s.nextLine();
+
         s3.close();
+        javalin.stop();
     }
 
-    public static void listFolder(S3Client s3, String folder, String bucketName) {
+    public static List<ArchiveObject> listFolder(S3Client s3, String folder, String bucketName) {
+        List<ArchiveObject> ret = new ArrayList<>();
+
         try {
             ListObjectsV2Request listObjects = ListObjectsV2Request.builder()
                     .bucket(bucketName)
@@ -50,30 +65,19 @@ public class Main {
             SdkIterable<S3Object> objects = res.contents();
             for (var obj : objects) {
                 if (obj.key().equals(folder)) continue;
-                System.out.println("\"" + obj.key() + "\" : " + readableFileSize(obj.size()));
+                ret.add(ArchiveObject.fromS3Object(obj));
             }
 
             SdkIterable<CommonPrefix> prefixes = res.commonPrefixes();
             for (var prefix : prefixes) {
                 if (prefix.prefix().equals(folder)) continue;
-                System.out.println("\"" + prefix.prefix() + "\"");
+                ret.add(ArchiveObject.fromCommonPrefix(prefix));
             }
-
         } catch (S3Exception e) {
             System.err.println(e.awsErrorDetails().errorMessage());
-            System.exit(1);
         }
-    }
 
-    /**
-     * Taken from <a href="https://stackoverflow.com/a/5599842/5894824">StackOverflow</a>
-     */
-    public static String readableFileSize(long size) {
-        if (size <= 0) return "0";
-        final int base = 1000;
-        final String[] units = new String[]{"B", "kB", "MB", "GB", "TB", "PB", "EB"};
-        int digitGroups = (int) (Math.log10(size) / Math.log10(base));
-        return new DecimalFormat("#,##0.#").format(size / Math.pow(base, digitGroups)) + " " + units[digitGroups];
+        return ret;
     }
 
 }
