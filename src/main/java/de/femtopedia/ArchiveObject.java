@@ -6,12 +6,19 @@ import software.amazon.awssdk.services.s3.model.S3Object;
 
 public record ArchiveObject(String name, String url, String fileSize) {
 
-    public static ArchiveObject fromS3Object(S3Object s3Object) {
-        return new ArchiveObject(s3Object.key(), s3Object.key(), readableFileSize(s3Object.size()));
+    public static ArchiveObject fromS3Object(S3Object s3Object, String publicUri) {
+        return new ArchiveObject(s3Object.key(), publicUri + s3Object.key(), readableFileSize(s3Object.size()));
     }
 
     public static ArchiveObject fromCommonPrefix(CommonPrefix commonPrefix) {
-        return new ArchiveObject(commonPrefix.prefix(), commonPrefix.prefix(), null);
+        return new ArchiveObject(commonPrefix.prefix(), null, null);
+    }
+
+    public String asHTML() {
+        return "<tr>" +
+               "<td>" + (url == null ? name : "<a href=\"" + url + "\">" + name + "</a>") + "</td>" +
+               "<td>" + (fileSize == null ? "" : fileSize) + "</td>" +
+               "</tr>";
     }
 
     /**
