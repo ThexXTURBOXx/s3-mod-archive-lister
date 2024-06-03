@@ -5,6 +5,8 @@ import io.javalin.http.Context;
 import io.javalin.plugin.bundled.CorsPluginConfig;
 import java.io.FileInputStream;
 import java.net.URI;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.Properties;
@@ -54,7 +56,7 @@ public class Main {
     }
 
     public static void listPoint(Context ctx, S3Client s3, String bucketName, String publicUri) {
-        String prefix = ctx.path().trim();
+        String prefix = URLDecoder.decode(ctx.path(), StandardCharsets.UTF_8).trim();
         if (prefix.startsWith("/")) prefix = prefix.substring(1);
         if (!prefix.isEmpty() && !prefix.endsWith("/")) prefix += "/";
 
@@ -63,7 +65,7 @@ public class Main {
                 "<table>" +
                 "<tr><th>File</th><th>Size</th><tr>" +
                 listFolder(s3, prefix, bucketName, publicUri).stream()
-                        .sorted(Comparator.<ArchiveObject, Boolean>comparing(o -> o.url() != null)
+                        .sorted(Comparator.comparing(ArchiveObject::isFile)
                                 .thenComparing(o -> o.name().toLowerCase(), Comparator.naturalOrder()))
                         .map(ArchiveObject::asHTML)
                         .collect(Collectors.joining()) +

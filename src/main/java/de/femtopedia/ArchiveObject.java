@@ -4,14 +4,18 @@ import java.text.DecimalFormat;
 import software.amazon.awssdk.services.s3.model.CommonPrefix;
 import software.amazon.awssdk.services.s3.model.S3Object;
 
-public record ArchiveObject(String name, String url, String fileSize) {
+public record ArchiveObject(String name, String url, String fileSize, boolean isFile) {
 
     public static ArchiveObject fromS3Object(S3Object s3Object, String publicUri) {
-        return new ArchiveObject(s3Object.key(), publicUri + s3Object.key(), readableFileSize(s3Object.size()));
+        String key = s3Object.key();
+        return new ArchiveObject(key.substring(key.lastIndexOf('/') + 1),
+                publicUri + key, readableFileSize(s3Object.size()), true);
     }
 
     public static ArchiveObject fromCommonPrefix(CommonPrefix commonPrefix) {
-        return new ArchiveObject(commonPrefix.prefix(), null, null);
+        String prefix = commonPrefix.prefix();
+        String trimmed = prefix.substring(prefix.lastIndexOf('/', prefix.length() - 2) + 1);
+        return new ArchiveObject(trimmed, trimmed, null, false);
     }
 
     public String asHTML() {
@@ -24,7 +28,7 @@ public record ArchiveObject(String name, String url, String fileSize) {
     /**
      * Taken from <a href="https://stackoverflow.com/a/5599842/5894824">StackOverflow</a>
      */
-    public static String readableFileSize(Long size) {
+    private static String readableFileSize(Long size) {
         if (size == null || size <= 0) return "0";
         final int base = 1000;
         final String[] units = new String[]{"B", "kB", "MB", "GB", "TB", "PB", "EB"};
