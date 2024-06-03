@@ -43,14 +43,7 @@ public class Main {
 
         Javalin javalin = Javalin.create(config -> config.bundledPlugins.enableCors(
                         container -> container.addRule(CorsPluginConfig.CorsRule::anyHost)))
-                .get("/", ctx -> listPoint(ctx, s3, bucketName, publicUri))
-                .get("/{p1}", ctx -> listPoint(ctx, s3, bucketName, publicUri))
-                .get("/{p1}/{p2}", ctx -> listPoint(ctx, s3, bucketName, publicUri))
-                .get("/{p1}/{p2}/{p3}", ctx -> listPoint(ctx, s3, bucketName, publicUri))
-                .get("/{p1}/{p2}/{p3}/{p4}", ctx -> listPoint(ctx, s3, bucketName, publicUri))
-                .get("/{p1}/{p2}/{p3}/{p4}/{p5}", ctx -> listPoint(ctx, s3, bucketName, publicUri))
-                .get("/{p1}/{p2}/{p3}/{p4}/{p5}/{p6}", ctx -> listPoint(ctx, s3, bucketName, publicUri))
-                .get("/{p1}/{p2}/{p3}/{p4}/{p5}/{p6}/{p7}", ctx -> listPoint(ctx, s3, bucketName, publicUri))
+                .get("*", ctx -> listPoint(ctx, s3, bucketName, publicUri))
                 .start();
 
         Scanner s = new Scanner(System.in);
