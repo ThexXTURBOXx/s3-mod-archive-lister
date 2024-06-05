@@ -38,4 +38,5 @@ build/
 config.properties
 
 ### Others ###
-mcadl/
+/cfdl/
+/mcadl/

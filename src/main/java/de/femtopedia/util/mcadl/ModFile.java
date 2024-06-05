@@ -16,7 +16,8 @@ import org.jsoup.nodes.Element;
 public record ModFile(String name, String page_url, String redirect_url, String direct_url, String archive_url) {
 
     private static final Map<Predicate<URL>, Function<URL, URL>> RESOLVERS = Map.of(
-            url -> url.getHost().contains("mediafire.com"), ModFile::resolveMediaFire
+            url -> url.getHost().contains("mediafire.com"), ModFile::resolveMediaFire,
+            url -> url.getHost().contains("s3.amazonaws.com"), url -> url
     );
 
     public void downloadTo(Path path) throws IOException {
