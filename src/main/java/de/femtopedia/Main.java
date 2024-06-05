@@ -13,8 +13,6 @@ import java.util.Properties;
 import java.util.Scanner;
 import java.util.Set;
 import java.util.stream.Collectors;
-import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
-import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.pagination.sync.SdkIterable;
 import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
@@ -35,9 +33,6 @@ public class Main {
         String bucketName = properties.getProperty("bucket_name");
         Region region = Region.of(properties.getProperty("region"));
         S3Client s3 = S3Client.builder()
-                .credentialsProvider(StaticCredentialsProvider.create(AwsBasicCredentials.create(
-                        properties.getProperty("access_key"),
-                        properties.getProperty("secret_key"))))
                 .endpointOverride(new URI(properties.getProperty("endpoint_uri")))
                 .serviceConfiguration(S3Configuration.builder().pathStyleAccessEnabled(true).build())
                 .region(region)
