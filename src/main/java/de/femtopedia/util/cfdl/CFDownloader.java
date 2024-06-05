@@ -2,15 +2,13 @@ package de.femtopedia.util.cfdl;
 
 import io.github.matyrobbrt.curseforgeapi.CurseForgeAPI;
 import io.github.matyrobbrt.curseforgeapi.request.Requests;
-import io.github.matyrobbrt.curseforgeapi.request.query.PaginationQuery;
-import io.github.matyrobbrt.curseforgeapi.schemas.file.File;
+import io.github.matyrobbrt.curseforgeapi.request.helper.RequestHelper;
 import io.github.matyrobbrt.curseforgeapi.schemas.mod.Mod;
 import java.io.FileInputStream;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.List;
 import java.util.Properties;
 import org.apache.maven.artifact.versioning.ComparableVersion;
 
@@ -25,15 +23,10 @@ public class CFDownloader {
         final CurseForgeAPI cfApi = CurseForgeAPI.builder()
                 .apiKey(properties.getProperty("cf_key"))
                 .build();
+        final RequestHelper helper = new RequestHelper(cfApi);
         Mod mod = cfApi.makeRequest(Requests.getMod(MOD_ID)).get();
         Path modPath = Path.of("cfdl", mod.name());
-        List<File> files = new ArrayList<>();
-        for (int i = 0; ; ++i) {
-            var fs = cfApi.makeRequest(Requests.getModFiles(MOD_ID, null, PaginationQuery.of(i * 50, 50))).get();
-            if (fs.isEmpty()) break;
-            files.addAll(fs);
-        }
-        for (File f : files) {
+        helper.listModFiles(mod).get().forEachRemaining(f -> {
             Path versionPath = modPath.resolve(f.gameVersions().stream()
                     .filter(v -> v.matches("(?:[0-9]+\\.)+[0-9]+") || v.startsWith("Beta") || v.endsWith("-Snapshot"))
                     .map(v -> v.replaceFirst("Beta ", "b").replace("-Snapshot", ""))
@@ -41,11 +34,15 @@ public class CFDownloader {
             Path filePath = versionPath.resolve(f.fileName());
             if (Files.exists(filePath)) {
                 System.err.println("File already exists: " + filePath + " for " + f.displayName());
-                continue;
+                return;
             }
-            f.download(filePath);
+            try {
+                f.download(filePath);
+            } catch (IOException e) {
+                System.err.println("Error downloading file: " + filePath + " for " + f.displayName());
+            }
             System.out.println("Successfully downloaded: " + f.displayName() + " (" + f.fileName() + ")");
-        }
+        });
     }
 
 }
